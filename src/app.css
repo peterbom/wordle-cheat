@@ -1,0 +1,207 @@
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color: rgba(0, 0, 0, 0.7);
+  background-color: white;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+
+a:hover {
+  color: #535bf2;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+main {
+  padding-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  place-items: center;
+}
+
+.visually-hidden {
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: auto;
+  margin: 0;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+  white-space: nowrap;
+}
+
+.grid {
+  --width: min(100vw, 40vh, 380px);
+  max-width: var(--width);
+  align-self: center;
+  justify-self: center;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.grid .row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-gap: 0.2rem;
+  margin: 0 0 0.2rem 0;
+}
+
+.grid .row.current {
+  width: calc(var(--width) / 5 * 6);
+  grid-template-columns: repeat(6, 1fr);
+}
+
+.row.current {
+  filter: drop-shadow(3px 3px 10px var(--color-bg-0));
+}
+
+.letter {
+  aspect-ratio: 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-sizing: border-box;
+  text-transform: uppercase;
+  border: none;
+  font-size: calc(0.08 * var(--width));
+  border-radius: 2px;
+  background: white;
+  margin: 0;
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.matchselector {
+  width: 100%;
+  height: 50%;
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  text-align: center;
+  box-sizing: border-box;
+  margin: 0;
+}
+
+.matchselector>* {
+  border: none;
+  cursor: pointer;
+  width: 33%;
+  height: 1rem;
+}
+
+.matchselector .exact {
+  background: #68a963;
+}
+
+.matchselector .partial {
+  background: #f0c105;
+}
+
+.matchselector .missing {
+  background: #787c7e;
+}
+
+.letter.missing {
+  background: #787c7e;
+  color: white;
+}
+
+.letter.exact {
+  background: #68a963;
+  color: white;
+}
+
+.letter.partial {
+  background: #f0c105;
+  color: white;
+}
+
+.responsive-table {
+  --width: min(100vw, 800px);
+  max-width: var(--width);
+  padding: 0;
+}
+
+.responsive-table li {
+  border-radius: 3px;
+  padding: 0.5rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.responsive-table .table-header {
+  background-color: #dddddd;
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
+}
+
+.responsive-table .table-row {
+  background-color: #ffffff;
+  box-shadow: 0px 0px 9px 0px rgba(0, 0, 0, 0.1);
+}
+
+.responsive-table .selectable {
+  cursor: pointer;
+}
+
+.responsive-table .col-1 {
+  flex-basis: 20%;
+}
+
+.responsive-table .col-2 {
+  flex-basis: 30%;
+}
+
+.responsive-table .col-3 {
+  flex-basis: 30%;
+}
+
+@media all and (max-width: 767px) {
+  .responsive-table .table-header {
+    display: none;
+  }
+
+  .responsive-table li {
+    display: block;
+  }
+
+  .responsive-table .col {
+    flex-basis: 100%;
+  }
+
+  .responsive-table .col {
+    display: flex;
+    padding: 10px 0;
+  }
+
+  .responsive-table .col:before {
+    color: #6c7a89;
+    padding-right: 10px;
+    content: attr(data-label);
+    flex-basis: 50%;
+    text-align: right;
+  }
+}
