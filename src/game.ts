@@ -1,8 +1,10 @@
 import {
+	asLookup,
 	getSortedGuessStats,
 	getUpdatedPattern,
 	getWord,
 	type GuessStats,
+	type GuessStatsLookup,
 	type MatchLevel,
 	type Pattern
 } from './analysis/stats';
@@ -12,6 +14,7 @@ export type Turn = {
 	possibleAnswers: string[];
 	pattern: Pattern;
 	guessStats: GuessStats[];
+	lookup: GuessStatsLookup;
 };
 
 export type Game = {
@@ -29,7 +32,8 @@ export function createGame(guesses: GuessStats[] | undefined, allowedAnswers: st
 				guess: guesses[0].guess,
 				possibleAnswers: allowedAnswers,
 				pattern: 0,
-				guessStats: guesses
+				guessStats: guesses,
+				lookup: asLookup(guesses)
 			}
 		]
 	};
@@ -44,14 +48,13 @@ export function setGuess(game: Game, guess: string): Game {
 export function setMatchLevel(game: Game, index: number, matchLevel: MatchLevel): Game {
 	const lastTurn = game.turns[game.turns.length - 1];
 	const newPattern = getUpdatedPattern(lastTurn.pattern, index, matchLevel);
-	console.log(newPattern);
 	const newTurns = [...game.turns.slice(0, -1), { ...lastTurn, pattern: newPattern }];
 	return { ...game, turns: newTurns };
 }
 
 export function getNextWord(game: Game): Game {
 	const lastTurn = game.turns[game.turns.length - 1];
-	const laswWordGuessStats = lastTurn.guessStats.find((s) => s.guess === lastTurn.guess);
+	const laswWordGuessStats = lastTurn.lookup.get(lastTurn.guess);
 	if (!laswWordGuessStats) {
 		return game;
 	}
@@ -75,7 +78,8 @@ export function getNextWord(game: Game): Game {
 				guess: nextWordGuessStats[0].guess,
 				possibleAnswers: nextWordDistribs.map(getWord),
 				pattern: 0,
-				guessStats: nextWordGuessStats
+				guessStats: nextWordGuessStats,
+				lookup: asLookup(nextWordGuessStats)
 			}
 		]
 	};

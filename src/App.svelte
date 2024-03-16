@@ -32,8 +32,8 @@
     game = game && setMatchLevel(game, column, matchLevel);
   }
 
-  function handleGuessClick(guess: GuessStats) {
-    game = game && setGuess(game, guess.guess);
+  function handleGuessClick(guess: string) {
+    game = game && setGuess(game, guess);
   }
 
   function handleGetNextWord() {
@@ -97,7 +97,7 @@
         </div>
       {/each}
     </div>
-    <ul class="responsive-table">
+    <ul class="item-list">
       <li class="table-header">
         <div class="col col-1">Guess</div>
         <div class="col col-2">Expected words remaining</div>
@@ -108,7 +108,7 @@
         <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
         <li
           class="table-row selectable"
-          on:click={() => handleGuessClick(guess)}
+          on:click={() => handleGuessClick(guess.guess)}
         >
           <div class="col col-1">{guess.guess}</div>
           <div class="col col-2">{guess.avg.toFixed(2)}</div>
@@ -117,14 +117,28 @@
       {/each}
     </ul>
     {#if lastTurn.possibleAnswers.length < 20}
-      <ul class="responsive-table">
+      <ul class="item-list">
         <li class="table-header">
           <div class="col col-1">Possible Answer</div>
+          <div class="col col-2">Expected words remaining</div>
+          <div class="col col-3">
+            Standard deviation of remaining word counts
+          </div>
         </li>
         {#each lastTurn.possibleAnswers as answer}
-          <li class="table-row">
-            <div class="col col-1">{answer}</div>
-          </li>
+          {@const stats = lastTurn.lookup.get(answer)}
+          {#if stats}
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+            <li
+              class="table-row selectable"
+              on:click={() => handleGuessClick(answer)}
+            >
+              <div class="col col-1">{answer}</div>
+              <div class="col col-2">{stats.avg.toFixed(2)}</div>
+              <div class="col col-3">{stats.stdDev.toFixed(2)}</div>
+            </li>
+          {/if}
         {/each}
       </ul>
     {/if}

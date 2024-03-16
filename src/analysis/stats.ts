@@ -52,6 +52,12 @@ export type GuessStats = {
 	stdDev: number;
 };
 
+export type GuessStatsLookup = Map<string, GuessStats>;
+
+export function asLookup(guessStats: GuessStats[]): GuessStatsLookup {
+	return new Map(Object.entries(guessStats).map((entry) => [entry[1].guess, entry[1]]));
+}
+
 export function getSortedGuessStats(answerDistribs: LetterDistribution[]): GuessStats[] {
 	const answerSet = new Set(answerDistribs.map(getWord));
 
@@ -94,11 +100,13 @@ function compareStats(statsA: GuessStats, statsB: GuessStats) {
 	if (stdDevDiff !== 0) return stdDevDiff;
 
 	// Possible answers should appear first
-	if (statsA.isPossibleAnswer && !statsB.isPossibleAnswer) return -1;
-	if (statsB.isPossibleAnswer && !statsA.isPossibleAnswer) return 1;
+	if (statsA.isPossibleAnswer || statsB.isPossibleAnswer) {
+		if (statsA.isPossibleAnswer && !statsB.isPossibleAnswer) return 1;
+		if (statsB.isPossibleAnswer && !statsA.isPossibleAnswer) return -1;
+	}
 
-	// If identical keep in order of appearance
-	return 1;
+	// If identical keep in alphabetical order
+	return statsA.guess.localeCompare(statsB.guess);
 }
 
 export function getPattern(guess: string, answerDistrib: LetterDistribution): Pattern {
