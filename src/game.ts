@@ -11,7 +11,7 @@ import {
 
 export type Turn = {
 	guess: string;
-	possibleAnswers: string[];
+	possibleAnswerStats: GuessStats[];
 	pattern: Pattern;
 	guessStats: GuessStats[];
 	lookup: GuessStatsLookup;
@@ -26,11 +26,14 @@ export function createGame(guesses: GuessStats[] | undefined, allowedAnswers: st
 		return undefined;
 	}
 
+	const answerSet = new Set(allowedAnswers);
+	const possibleAnswerStats = guesses.filter(stats => answerSet.has(stats.guess))
+
 	return {
 		turns: [
 			{
 				guess: guesses[0].guess,
-				possibleAnswers: allowedAnswers,
+				possibleAnswerStats,
 				pattern: 0,
 				guessStats: guesses,
 				lookup: asLookup(guesses)
@@ -70,13 +73,16 @@ export function getNextWord(game: Game): Game {
 		return game;
 	}
 
+	const answerSet = new Set(nextWordDistribs.map(getWord));
+	const possibleAnswerStats = nextWordGuessStats.filter(stats => answerSet.has(stats.guess));
+
 	return {
 		...game,
 		turns: [
 			...game.turns,
 			{
 				guess: nextWordGuessStats[0].guess,
-				possibleAnswers: nextWordDistribs.map(getWord),
+				possibleAnswerStats,
 				pattern: 0,
 				guessStats: nextWordGuessStats,
 				lookup: asLookup(nextWordGuessStats)

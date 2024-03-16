@@ -116,7 +116,7 @@
         </li>
       {/each}
     </ul>
-    {#if lastTurn.possibleAnswers.length < 20}
+    {#if lastTurn.possibleAnswerStats.length < 20}
       <ul class="item-list">
         <li class="table-header">
           <div class="col col-1">Possible Answer</div>
@@ -125,20 +125,17 @@
             Standard deviation of remaining word counts
           </div>
         </li>
-        {#each lastTurn.possibleAnswers as answer}
-          {@const stats = lastTurn.lookup.get(answer)}
-          {#if stats}
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-            <li
-              class="table-row selectable"
-              on:click={() => handleGuessClick(answer)}
-            >
-              <div class="col col-1">{answer}</div>
-              <div class="col col-2">{stats.avg.toFixed(2)}</div>
-              <div class="col col-3">{stats.stdDev.toFixed(2)}</div>
-            </li>
-          {/if}
+        {#each lastTurn.possibleAnswerStats as stats}
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+          <li
+            class="table-row selectable"
+            on:click={() => handleGuessClick(stats.guess)}
+          >
+            <div class="col col-1">{stats.guess}</div>
+            <div class="col col-2">{stats.avg.toFixed(2)}</div>
+            <div class="col col-3">{stats.stdDev.toFixed(2)}</div>
+          </li>
         {/each}
       </ul>
     {/if}
