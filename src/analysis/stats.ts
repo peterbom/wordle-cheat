@@ -42,6 +42,8 @@ export enum MatchLevel {
 
 export type Pattern = number;
 
+export type PartialPattern = [MatchLevel | null, MatchLevel | null, MatchLevel | null, MatchLevel | null, MatchLevel | null];
+
 export type PatternAnswerDistributions = Map<Pattern, LetterDistribution[]>;
 
 export type GuessStats = {
@@ -162,6 +164,31 @@ export function getMatchLevelAtIndex(pattern: Pattern, index: number): MatchLeve
 		return ones;
 	}
 	return getMatchLevelAtIndex((pattern - ones) / 3, index - 1);
+}
+
+export function getPossiblePatterns(guessStats: GuessStats): Pattern[] {
+	return [...guessStats.patternAnswerDistribs.keys()].sort((a, b) => a - b);
+}
+
+export function getMatchingPatterns(patterns: Pattern[], partialPattern: PartialPattern): Pattern[] {
+	for (let i = 0; i < 5; i++) {
+		const matchLevel = partialPattern[i];
+		if (matchLevel !== null) {
+			patterns = patterns.filter(p => getMatchLevelAtIndex(p, i) === matchLevel);
+		}
+	}
+	return patterns;
+}
+
+export function asPattern(partialPattern: PartialPattern): Pattern {
+	let pattern = 0;
+	for (let i = 0; i < 5; i++) {
+		const matchLevel = partialPattern[i];
+		if (matchLevel !== null) {
+			pattern += getPatternAtIndex(matchLevel, i);
+		}
+	}
+	return pattern;
 }
 
 export function getLetterDistribution(word: string): LetterDistribution {

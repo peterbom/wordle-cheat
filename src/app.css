@@ -61,19 +61,11 @@ main {
 }
 
 .grid .row {
+  --height: calc(var(--width) / 6);
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   grid-gap: 0.2rem;
   margin: 0 0 0.2rem 0;
-}
-
-.grid .row.current {
-  width: calc(var(--width) / 5 * 6);
-  grid-template-columns: repeat(6, 1fr);
-}
-
-.row.current {
-  filter: drop-shadow(3px 3px 10px var(--color-bg-0));
 }
 
 .letter {
@@ -85,7 +77,7 @@ main {
   text-align: center;
   box-sizing: border-box;
   text-transform: uppercase;
-  border: none;
+  border: 2px solid #d3d6da;
   font-size: calc(0.08 * var(--width));
   border-radius: 2px;
   background: white;
@@ -93,49 +85,44 @@ main {
   color: rgba(0, 0, 0, 0.7);
 }
 
-.matchselector {
-  width: 100%;
-  height: 50%;
-  display: flex;
-  align-items: stretch;
-  justify-content: space-between;
-  text-align: center;
-  box-sizing: border-box;
-  margin: 0;
-}
-
-.matchselector>* {
-  border: none;
-  cursor: pointer;
-  width: 33%;
-  height: 1rem;
-}
-
-.matchselector .exact {
-  background: #68a963;
-}
-
-.matchselector .partial {
-  background: #f0c105;
-}
-
-.matchselector .missing {
-  background: #787c7e;
-}
-
 .letter.missing {
   background: #787c7e;
   color: white;
+  border: 0;
 }
 
 .letter.exact {
   background: #68a963;
   color: white;
+  border: 0;
 }
 
 .letter.partial {
   background: #f0c105;
   color: white;
+  border: 0;
+}
+
+.letter.current {
+  cursor: pointer;
+}
+
+.matchselector {
+  width: 100%;
+  height: calc(var(--height) * 0.4);
+  cursor: pointer;
+}
+
+.matchselector.exact {
+  background: #68a963;
+}
+
+.matchselector.partial {
+  background: #f0c105;
+}
+
+.matchselector.missing {
+  background: #787c7e;
 }
 
 .item-list {

@@ -1,19 +1,24 @@
 import {
 	asLookup,
 	getSortedGuessStats,
-	getUpdatedPattern,
 	getWord,
+	MatchLevel,
 	type GuessStats,
 	type GuessStatsLookup,
-	type MatchLevel,
-	type Pattern
+	type Pattern,
+	getPossiblePatterns,
+	type PartialPattern,
+	getMatchingPatterns,
+	asPattern
 } from './analysis/stats';
 
 export type Turn = {
-	guess: string;
+	guessStats: GuessStats;
 	possibleAnswerStats: GuessStats[];
-	pattern: Pattern;
-	guessStats: GuessStats[];
+	possiblePatterns: Pattern[];
+	partialPattern: PartialPattern;
+	pattern: Pattern | null;
+	allGuessStats: GuessStats[];
 	lookup: GuessStatsLookup;
 };
 
@@ -28,14 +33,17 @@ export function createGame(guesses: GuessStats[] | undefined, allowedAnswers: st
 
 	const answerSet = new Set(allowedAnswers);
 	const possibleAnswerStats = guesses.filter(stats => answerSet.has(stats.guess))
+	const guessStats = guesses[0];
 
 	return {
 		turns: [
 			{
-				guess: guesses[0].guess,
+				guessStats,
 				possibleAnswerStats,
-				pattern: 0,
-				guessStats: guesses,
+				possiblePatterns: getPossiblePatterns(guessStats),
+				partialPattern: [null, null, null, null, null],
+				pattern: null,
+				allGuessStats: guesses,
 				lookup: asLookup(guesses)
 			}
 		]
@@ -44,25 +52,51 @@ export function createGame(guesses: GuessStats[] | undefined, allowedAnswers: st
 
 export function setGuess(game: Game, guess: string): Game {
 	const lastTurn = game.turns[game.turns.length - 1];
-	const newTurns = [...game.turns.slice(0, -1), { ...lastTurn, guess }];
-	return { ...game, turns: newTurns };
-}
-
-export function setMatchLevel(game: Game, index: number, matchLevel: MatchLevel): Game {
-	const lastTurn = game.turns[game.turns.length - 1];
-	const newPattern = getUpdatedPattern(lastTurn.pattern, index, matchLevel);
-	const newTurns = [...game.turns.slice(0, -1), { ...lastTurn, pattern: newPattern }];
-	return { ...game, turns: newTurns };
-}
-
-export function getNextWord(game: Game): Game {
-	const lastTurn = game.turns[game.turns.length - 1];
-	const laswWordGuessStats = lastTurn.lookup.get(lastTurn.guess);
-	if (!laswWordGuessStats) {
+	const guessStats = lastTurn.lookup.get(guess);
+	if (!guessStats) {
 		return game;
 	}
 
-	const nextWordDistribs = laswWordGuessStats.patternAnswerDistribs.get(lastTurn.pattern);
+	const newTurns: Turn[] = [...game.turns.slice(0, -1), { ...lastTurn, guessStats }];
+	return { ...game, turns: newTurns };
+}
+
+export function togglePartialPattern(game: Game, index: number): Game {
+	const lastTurn = game.turns[game.turns.length - 1];
+	const partialPattern: PartialPattern = [...lastTurn.partialPattern];
+	let matchingPatterns: Pattern[];
+	do {
+		const currentMatchLevelAtIndex = partialPattern[index];
+		const newMatchLevelAtIndex = (((currentMatchLevelAtIndex === null ? -1 : currentMatchLevelAtIndex) + 1) % 3) as MatchLevel;
+		partialPattern[index] = newMatchLevelAtIndex;
+		matchingPatterns = getMatchingPatterns(lastTurn.possiblePatterns, partialPattern);
+	} while (matchingPatterns.length === 0);
+
+	const updatedLastTurn = {
+		...lastTurn,
+		partialPattern,
+		pattern: matchingPatterns.length === 1 ? matchingPatterns[0] : null
+	};
+
+	return {
+		...game,
+		turns: [...game.turns.slice(0, -1), updatedLastTurn]
+	};
+}
+
+export function setLastTurnPattern(game: Game, pattern: Pattern): Game {
+	const lastTurn = game.turns[game.turns.length - 1];
+	const updatedTurns = [...game.turns.slice(0, -1), { ...lastTurn, pattern }];
+	return { ...game, turns: updatedTurns };
+}
+
+export function setNextWord(game: Game): Game {
+	const lastTurn = game.turns[game.turns.length - 1];
+	if (lastTurn.pattern === null) {
+		return game;
+	}
+
+	const nextWordDistribs = lastTurn.guessStats.patternAnswerDistribs.get(lastTurn.pattern);
 	if (!nextWordDistribs || nextWordDistribs.length === 0) {
 		return game;
 	}
@@ -75,18 +109,38 @@ export function getNextWord(game: Game): Game {
 
 	const answerSet = new Set(nextWordDistribs.map(getWord));
 	const possibleAnswerStats = nextWordGuessStats.filter(stats => answerSet.has(stats.guess));
+	const guessStats = nextWordGuessStats[0];
+	const isComplete = possibleAnswerStats.length === 1;
+	const partialPattern: PartialPattern = isComplete
+		? [MatchLevel.Exact, MatchLevel.Exact, MatchLevel.Exact, MatchLevel.Exact, MatchLevel.Exact]
+		: [null, null, null, null, null];
+	const pattern = isComplete ? asPattern(partialPattern) : null;
 
 	return {
 		...game,
 		turns: [
 			...game.turns,
 			{
-				guess: nextWordGuessStats[0].guess,
+				guessStats,
 				possibleAnswerStats,
-				pattern: 0,
-				guessStats: nextWordGuessStats,
+				possiblePatterns: getPossiblePatterns(guessStats),
+				partialPattern,
+				pattern,
+				allGuessStats: nextWordGuessStats,
 				lookup: asLookup(nextWordGuessStats)
 			}
 		]
 	};
+}
+
+export function deleteLastTurn(game: Game): Game {
+	if (game.turns.length <= 1) {
+		return game;
+	}
+
+	const newTurns: Turn[] = game.turns.slice(0, -1);
+	const lastTurn = newTurns[newTurns.length - 1];
+	const updatedTurns: Turn[] = [...newTurns.slice(0, -1), { ...lastTurn, pattern: null }];
+
+	return { ...game, turns: updatedTurns };
 }

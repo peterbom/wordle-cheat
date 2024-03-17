@@ -7,9 +7,18 @@
     getLetterDistribution,
     getMatchLevelAtIndex,
     getSortedGuessStats,
-    type GuessStats,
+    type Pattern,
+    getWord,
+    getMatchingPatterns,
   } from "./analysis/stats";
-  import { setMatchLevel, createGame, setGuess, getNextWord } from "./game";
+  import {
+    createGame,
+    deleteLastTurn,
+    setGuess,
+    setLastTurnPattern,
+    setNextWord,
+    togglePartialPattern,
+  } from "./game";
 
   $: allGuessStats = liveQuery(async () => {
     let guessesData = await db.data.get("guesses");
@@ -28,16 +37,25 @@
   $: guessCount = 20;
   $: game = createGame($allGuessStats, allowedAnswers);
 
-  function handleMatchLevelSelect(column: number, matchLevel: MatchLevel) {
-    game = game && setMatchLevel(game, column, matchLevel);
-  }
-
   function handleGuessClick(guess: string) {
     game = game && setGuess(game, guess);
   }
 
-  function handleGetNextWord() {
-    game = game && getNextWord(game);
+  function handleLetterClick(current: boolean, index: number) {
+    game = game && current ? togglePartialPattern(game, index) : game;
+  }
+
+  function handleNextWord() {
+    game = game && setNextWord(game);
+  }
+
+  function handlePatternSelect(pattern: Pattern) {
+    game = game && setLastTurnPattern(game, pattern);
+    game = game && setNextWord(game);
+  }
+
+  function handleDeleteTurn() {
+    game = game && deleteLastTurn(game);
   }
 </script>
 
@@ -46,56 +64,74 @@
     <h2>Loading...</h2>
   {:else}
     {@const lastTurn = game.turns[game.turns.length - 1]}
-    {@const guessStats = lastTurn.guessStats.slice(0, guessCount)}
+    {@const isComplete = lastTurn.possibleAnswerStats.length <= 1}
+    {@const guessStats = lastTurn.allGuessStats.slice(0, guessCount)}
     <div class="grid">
       {#each Array(game.turns.length) as _, turnIndex (turnIndex)}
         {@const current = turnIndex === game.turns.length - 1}
         {@const turn = game.turns[turnIndex]}
         <div class="row" class:current>
           {#each Array.from(Array(5).keys()) as column (column)}
-            {@const value = turn.guess[column]}
-            {@const matchLevel = getMatchLevelAtIndex(turn.pattern, column)}
+            {@const value = turn.guessStats.guess[column]}
+            {@const matchLevel =
+              turn.pattern !== null
+                ? getMatchLevelAtIndex(turn.pattern, column)
+                : turn.partialPattern[column]}
             {@const exact = matchLevel === MatchLevel.Exact}
             {@const partial = matchLevel === MatchLevel.Partial}
             {@const missing = matchLevel === MatchLevel.None}
-            <div class="letter" class:exact class:partial class:missing>
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <div
+              class="letter"
+              class:exact
+              class:partial
+              class:missing
+              class:current
+              on:click={() => handleLetterClick(current, column)}
+            >
               {value}
-              <span class="visually-hidden">
-                {#if exact}
-                  (correct)
-                {:else if partial}
-                  (present)
-                {:else}
-                  (missing)
-                {/if}
-              </span>
-              <input name="guess" disabled={!current} type="hidden" {value} />
             </div>
           {/each}
           {#if current}
-            <button on:click={handleGetNextWord}>Next Word</button>
-            {#each Array.from(Array(5).keys()) as column (column)}
-              <div class="matchselector">
-                <button
-                  class="missing"
-                  on:click={() =>
-                    handleMatchLevelSelect(column, MatchLevel.None)}
-                />
-                <button
-                  class="partial"
-                  on:click={() =>
-                    handleMatchLevelSelect(column, MatchLevel.Partial)}
-                />
-                <button
-                  class="exact"
-                  on:click={() =>
-                    handleMatchLevelSelect(column, MatchLevel.Exact)}
-                />
-              </div>
-            {/each}
+            {#if lastTurn.pattern !== null && !isComplete}
+              <button on:click={handleNextWord}>Next word</button>
+            {:else if turnIndex > 0}
+              <button on:click={handleDeleteTurn}>Delete</button>
+            {/if}
           {/if}
         </div>
       {/each}
+
+      <details>
+        <summary>Patterns</summary>
+        {#each getMatchingPatterns(lastTurn.possiblePatterns, lastTurn.partialPattern) as pattern}
+          {@const patternDistribs =
+            lastTurn.guessStats.patternAnswerDistribs.get(pattern)}
+          {@const patternWords = patternDistribs
+            ? patternDistribs.map(getWord)
+            : []}
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <!-- svelte-ignore a11y-no-static-element-interactions -->
+          <div class="row" on:click={() => handlePatternSelect(pattern)}>
+            {#each Array.from(Array(5).keys()) as column (column)}
+              {@const matchLevel = getMatchLevelAtIndex(pattern, column)}
+              {@const exact = matchLevel === MatchLevel.Exact}
+              {@const partial = matchLevel === MatchLevel.Partial}
+              {@const missing = matchLevel === MatchLevel.None}
+              <div
+                class="matchselector"
+                class:exact
+                class:partial
+                class:missing
+              >
+                &nbsp;
+              </div>
+            {/each}
+            <div title={patternWords.join("\n")}>{patternWords.length}</div>
+          </div>
+        {/each}
+      </details>
     </div>
     <ul class="item-list">
       <li class="table-header">
