@@ -57,7 +57,15 @@ export function setGuess(game: Game, guess: string): Game {
 		return game;
 	}
 
-	const newTurns: Turn[] = [...game.turns.slice(0, -1), { ...lastTurn, guessStats }];
+	const updatedLastTurn: Turn = {
+		...lastTurn,
+		guessStats,
+		possiblePatterns: getPossiblePatterns(guessStats),
+		partialPattern: [null, null, null, null, null],
+		pattern: null
+	};
+
+	const newTurns: Turn[] = [...game.turns.slice(0, -1), updatedLastTurn];
 	return { ...game, turns: newTurns };
 }
 
