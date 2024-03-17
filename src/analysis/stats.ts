@@ -194,7 +194,7 @@ export function asPattern(partialPattern: PartialPattern): Pattern {
   for (let i = 0; i < 5; i++) {
     const matchLevel = partialPattern[i];
     if (matchLevel !== null) {
-      pattern += getPatternAtIndex(matchLevel, i);
+      pattern = getUpdatedPattern(pattern, i, matchLevel);
     }
   }
   return pattern;

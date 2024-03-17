@@ -51,7 +51,6 @@
 
   function handlePatternSelect(pattern: Pattern) {
     game = game && setLastTurnPattern(game, pattern);
-    game = game && setNextWord(game);
   }
 
   function handleDeleteTurn() {
@@ -77,6 +76,7 @@
               turn.pattern !== null
                 ? getMatchLevelAtIndex(turn.pattern, column)
                 : turn.partialPattern[column]}
+            {@const autofilled = current && turn.partialPattern[column] === null}
             {@const exact = matchLevel === MatchLevel.Exact}
             {@const partial = matchLevel === MatchLevel.Partial}
             {@const missing = matchLevel === MatchLevel.None}
@@ -88,6 +88,7 @@
               class:partial
               class:missing
               class:current
+              class:autofilled
               on:click={() => handleLetterClick(current, column)}
             >
               {value}

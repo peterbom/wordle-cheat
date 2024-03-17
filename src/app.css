@@ -10,6 +10,8 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  --match-color: white;
 }
 
 a {
@@ -68,6 +70,18 @@ main {
   margin: 0 0 0.2rem 0;
 }
 
+.exact {
+  --match-color: 104, 169, 99;
+}
+
+.partial {
+  --match-color: 240, 193, 5;
+}
+
+.missing {
+  --match-color: 120, 124, 126;
+}
+
 .letter {
   aspect-ratio: 1;
   width: 100%;
@@ -80,7 +94,7 @@ main {
   border: 2px solid #d3d6da;
   font-size: calc(0.08 * var(--width));
   border-radius: 2px;
-  background: white;
+  background-color: rgba(var(--match-color));
   margin: 0;
   color: rgba(0, 0, 0, 0.7);
 }
@@ -107,22 +121,15 @@ main {
   cursor: pointer;
 }
 
+.letter.autofilled {
+  background-color: rgba(var(--match-color), 0.5);
+}
+
 .matchselector {
   width: 100%;
   height: calc(var(--height) * 0.4);
   cursor: pointer;
-}
-
-.matchselector.exact {
-  background: #68a963;
-}
-
-.matchselector.partial {
-  background: #f0c105;
-}
-
-.matchselector.missing {
-  background: #787c7e;
+  background-color: rgba(var(--match-color));
 }
 
 .item-list {

@@ -151,9 +151,5 @@ export function deleteLastTurn(game: Game): Game {
     return game;
   }
 
-  const newTurns: Turn[] = game.turns.slice(0, -1);
-  const lastTurn = newTurns[newTurns.length - 1];
-  const updatedTurns: Turn[] = [...newTurns.slice(0, -1), { ...lastTurn, pattern: null }];
-
-  return { ...game, turns: updatedTurns };
+  return { ...game, turns: game.turns.slice(0, -1) };
 }
