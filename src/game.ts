@@ -79,8 +79,10 @@ export function togglePartialPattern(game: Game, index: number): Game {
   do {
     const currentMatchLevelAtIndex = partialPattern[index];
     const currentMatchLevelNumber =
-      currentMatchLevelAtIndex === null ? -1 : currentMatchLevelAtIndex;
-    const newMatchLevelAtIndex = ((currentMatchLevelNumber + 1) % 3) as MatchLevel;
+      currentMatchLevelAtIndex === null ? 3 : currentMatchLevelAtIndex;
+    const newMatchLevelNumber = (currentMatchLevelNumber + 1) % 4;
+    const newMatchLevelAtIndex =
+      newMatchLevelNumber === 3 ? null : (newMatchLevelNumber as MatchLevel);
     partialPattern[index] = newMatchLevelAtIndex;
     matchingPatterns = getMatchingPatterns(lastTurn.possiblePatterns, partialPattern);
   } while (matchingPatterns.length === 0);
