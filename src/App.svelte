@@ -3,30 +3,39 @@
   import { db } from "./analysis/storage";
   import { allowedAnswers } from "./analysis/words";
   import {
-    MatchLevel,
-    getLetterDistribution,
     getMatchLevelAtIndex,
-    getSortedGuessStats,
-    type Pattern,
     getWord,
     getMatchingPatterns,
+    MatchLevel,
+    type Pattern,
   } from "./analysis/stats";
   import {
     createGame,
     deleteLastTurn,
-    setGuess,
     setLastTurnPattern,
     setNextWord,
     togglePartialPattern,
+    type Game,
   } from "./game";
+  import { getWorkerResult, isError, type WorkerError } from "./workerUtils";
+  import type { GameMessageDefinitions } from "./worker";
+
+  $: errorMessage = "";
 
   $: allGuessStats = liveQuery(async () => {
     let guessesData = await db.data.get("guesses");
     if (!guessesData) {
-      const allowedAnswerDistribs = allowedAnswers.map(getLetterDistribution);
+      const guessStats = await getWorkerResult<GameMessageDefinitions, "buildGuessesData">(
+        "buildGuessesData",
+        undefined,
+      );
+      if (isError(guessStats)) {
+        errorMessage = guessStats.errorMessage;
+        return [];
+      }
       guessesData = {
         id: "guesses",
-        value: getSortedGuessStats(allowedAnswerDistribs),
+        value: guessStats,
       };
       await db.data.add(guessesData);
     }
@@ -36,9 +45,24 @@
 
   $: guessCount = 20;
   $: game = createGame($allGuessStats, allowedAnswers);
+  $: isUpdating = false;
+
+  async function updateGame(updater: (game: Game) => Promise<Game | WorkerError>) {
+    if (!game) return;
+    isUpdating = true;
+    const result = await updater(game);
+    if (isError(result)) {
+      errorMessage = result.errorMessage;
+    } else {
+      game = result;
+    }
+    isUpdating = false;
+  }
 
   function handleGuessClick(guess: string) {
-    game = game && setGuess(game, guess);
+    updateGame((game) =>
+      getWorkerResult<GameMessageDefinitions, "setGuess">("setGuess", { game, guess }),
+    );
   }
 
   function handleLetterClick(current: boolean, index: number) {
@@ -59,6 +83,9 @@
 </script>
 
 <main>
+  {#if errorMessage}
+    <h2>Error: {errorMessage}</h2>
+  {/if}
   {#if !game}
     <h2>Loading...</h2>
   {:else}
@@ -96,9 +123,9 @@
           {/each}
           {#if current}
             {#if lastTurn.pattern !== null && !isComplete}
-              <button on:click={handleNextWord}>Next word</button>
+              <button disabled={isUpdating} on:click={handleNextWord}>Next word</button>
             {:else if turnIndex > 0}
-              <button on:click={handleDeleteTurn}>Delete</button>
+              <button disabled={isUpdating} on:click={handleDeleteTurn}>Delete</button>
             {/if}
           {/if}
         </div>
