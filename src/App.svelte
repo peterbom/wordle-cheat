@@ -18,6 +18,7 @@
     setLastTurnPattern,
     setNextWord,
     togglePartialPattern,
+    type Game,
   } from "./game";
 
   $: allGuessStats = liveQuery(async () => {
@@ -34,31 +35,54 @@
     return guessesData?.value || [];
   });
 
+  $: errorMessage = "";
   $: guessCount = 20;
   $: game = createGame($allGuessStats, allowedAnswers);
+  $: isUpdating = false;
+
+  function updateGame(updater: (game: Game) => Game) {
+    if (!game) return;
+    if (isUpdating) return;
+    isUpdating = true;
+    errorMessage = "";
+    const gameToUpdate = game;
+    setTimeout(() => {
+      try {
+        game = updater(gameToUpdate);
+      } catch (e) {
+        errorMessage = e instanceof Error ? e.message : String(e);
+      } finally {
+        isUpdating = false;
+      }
+    }, 10);
+  }
 
   function handleGuessClick(guess: string) {
-    game = game && setGuess(game, guess);
+    updateGame((game) => setGuess(game, guess));
   }
 
   function handleLetterClick(current: boolean, index: number) {
-    game = game && current ? togglePartialPattern(game, index) : game;
+    if (!current) return;
+    updateGame((game) => togglePartialPattern(game, index));
   }
 
   function handleNextWord() {
-    game = game && setNextWord(game);
+    updateGame((game) => setNextWord(game));
   }
 
   function handlePatternSelect(pattern: Pattern) {
-    game = game && setLastTurnPattern(game, pattern);
+    updateGame((game) => setLastTurnPattern(game, pattern));
   }
 
   function handleDeleteTurn() {
-    game = game && deleteLastTurn(game);
+    updateGame((game) => deleteLastTurn(game));
   }
 </script>
 
 <main>
+  {#if errorMessage}
+    <h2>Error: {errorMessage}</h2>
+  {/if}
   {#if !game}
     <h2>Loading...</h2>
   {:else}
@@ -96,9 +120,9 @@
           {/each}
           {#if current}
             {#if lastTurn.pattern !== null && !isComplete}
-              <button on:click={handleNextWord}>Next word</button>
+              <button disabled={isUpdating} on:click={handleNextWord}>Next word</button>
             {:else if turnIndex > 0}
-              <button on:click={handleDeleteTurn}>Delete</button>
+              <button disabled={isUpdating} on:click={handleDeleteTurn}>Delete</button>
             {/if}
           {/if}
         </div>
