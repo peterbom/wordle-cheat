@@ -109,8 +109,8 @@ function compareStats(statsA: GuessStats, statsB: GuessStats) {
 
   // Possible answers should appear first
   if (statsA.isPossibleAnswer || statsB.isPossibleAnswer) {
-    if (statsA.isPossibleAnswer && !statsB.isPossibleAnswer) return 1;
-    if (statsB.isPossibleAnswer && !statsA.isPossibleAnswer) return -1;
+    if (statsA.isPossibleAnswer && !statsB.isPossibleAnswer) return -1;
+    if (statsB.isPossibleAnswer && !statsA.isPossibleAnswer) return 1;
   }
 
   // If identical keep in alphabetical order
