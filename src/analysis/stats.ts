@@ -1,5 +1,3 @@
-import { allowedGuesses } from "./words";
-
 export const letters = [
   "a",
   "b",
@@ -62,11 +60,101 @@ export type GuessStats = {
 
 export type GuessStatsLookup = Map<string, GuessStats>;
 
+export type GuessStatsStorable = {
+  allowedAnswers: string[];
+  orderedGuesses: string[];
+  guessPatterns: Pattern[][]; // All the patterns for each guess
+  guessPatternAnswerIndices: number[][][]; // All the answer indices for each pattern for each guess
+  averages: number[];
+  stdDevs: number[];
+};
+
+/*
+{
+  allowedAnswers: ["hello", "world", "apple", ...],
+  orderedGuesses: ["hello", "world", "apple", "dates"],
+  guessPatterns: [
+    [0, 1, 2, 55],            // Patterns for "hello"
+    [0, 2, 2, 3, 4, 33, 48],  // Patterns for "world"
+    [0, 1, 2, 3, 4],          // Patterns for "apple"
+  ],
+  guessPatternAnswerIndices: [
+    [
+      [33, 952],               // Answer indices for pattern 0
+      [100, 3],                // Answer indices for pattern 1
+      [24, 74],                // Answer indices for pattern 2
+      [92],                    // Answer indices for pattern 55
+      ...
+    ],
+    ...
+  ],
+}
+*/
+
+export function fromStorable(storable: GuessStatsStorable): GuessStats[] {
+  const allowedAnswerSet = new Set(storable.allowedAnswers);
+  const guessStats: GuessStats[] = [];
+  for (let guessIndex = 0; guessIndex < storable.orderedGuesses.length; guessIndex++) {
+    const guess = storable.orderedGuesses[guessIndex];
+    const guessPatterns = storable.guessPatterns[guessIndex];
+    const guessPatternAnswerIndices = storable.guessPatternAnswerIndices[guessIndex];
+    const patternAnswerDistribs: PatternAnswerDistributions = new Map();
+    for (let patternIndex = 0; patternIndex < guessPatterns.length; patternIndex++) {
+      const pattern = guessPatterns[patternIndex];
+      const answerIndices = guessPatternAnswerIndices[patternIndex];
+      const answers = answerIndices.map((answerIndex) => storable.allowedAnswers[answerIndex]);
+      patternAnswerDistribs.set(pattern, answers.map(getLetterDistribution));
+    }
+
+    guessStats.push({
+      guess,
+      isPossibleAnswer: allowedAnswerSet.has(guess),
+      patternAnswerDistribs,
+      avg: storable.averages[guessIndex],
+      stdDev: storable.stdDevs[guessIndex],
+    });
+  }
+
+  return guessStats;
+}
+
+export function toStorable(guessStats: GuessStats[], allowedAnswers: string[]): GuessStatsStorable {
+  const answerIndexLookup = Object.fromEntries(allowedAnswers.map((answer, i) => [answer, i]));
+  const guessPatterns: Pattern[][] = [];
+  const guessPatternAnswerIndices: number[][][] = [];
+  const averages: number[] = [];
+  const stdDevs: number[] = [];
+  for (const guessStat of guessStats) {
+    const patterns = [];
+    const answerIndices = [];
+    for (const [pattern, answerDistrib] of guessStat.patternAnswerDistribs) {
+      patterns.push(pattern);
+      answerIndices.push(answerDistrib.map((distrib) => answerIndexLookup[getWord(distrib)]));
+    }
+    guessPatterns.push(patterns);
+    guessPatternAnswerIndices.push(answerIndices);
+    averages.push(guessStat.avg);
+    stdDevs.push(guessStat.stdDev);
+  }
+
+  return {
+    allowedAnswers,
+    orderedGuesses: guessStats.map((stats) => stats.guess),
+    guessPatterns,
+    guessPatternAnswerIndices,
+    averages,
+    stdDevs,
+  };
+}
+
 export function asLookup(guessStats: GuessStats[]): GuessStatsLookup {
   return new Map(Object.entries(guessStats).map((entry) => [entry[1].guess, entry[1]]));
 }
 
-export function getSortedGuessStats(answerDistribs: LetterDistribution[]): GuessStats[] {
+export function getSortedGuessStats(
+  answerDistribs: LetterDistribution[],
+  allowedGuesses: string[],
+): GuessStats[] {
   const answerSet = new Set(answerDistribs.map(getWord));
 
   // If there are three or fewer possible remaining answers, choose one of those.

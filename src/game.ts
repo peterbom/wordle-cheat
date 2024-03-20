@@ -23,22 +23,19 @@ export type Turn = {
 };
 
 export type Game = {
+  allowedAnswers: string[];
+  allowedGuesses: string[];
   turns: Turn[];
 };
 
-export function createGame(
-  guesses: GuessStats[] | undefined,
-  allowedAnswers: string[],
-): Game | undefined {
-  if (!guesses || guesses.length === 0) {
-    return undefined;
-  }
-
+export function createGame(guesses: GuessStats[], allowedAnswers: string[]): Game {
   const answerSet = new Set(allowedAnswers);
   const possibleAnswerStats = guesses.filter((stats) => answerSet.has(stats.guess));
   const guessStats = guesses[0];
 
   return {
+    allowedAnswers,
+    allowedGuesses: guesses.map((stats) => stats.guess),
     turns: [
       {
         guessStats,
@@ -116,7 +113,7 @@ export function setNextWord(game: Game): Game {
     return game;
   }
 
-  const nextWordGuessStats = getSortedGuessStats(nextWordDistribs);
+  const nextWordGuessStats = getSortedGuessStats(nextWordDistribs, game.allowedGuesses);
   if (nextWordGuessStats.length === 0) {
     // TODO: handle no next word
     return game;
