@@ -59,6 +59,8 @@ export type GuessStats = {
   stdDev: number;
 };
 
+export type UnrankedGuessStats = Omit<GuessStats, "rank">;
+
 export type GuessStatsLookup = Map<string, GuessStats>;
 
 export type GuessStatsStorable = {
@@ -142,9 +144,8 @@ export function getSortedGuessStats(
   // Otherwise, consider all possible words.
   const guesses = answerDistribs.length >= 3 ? allowedGuesses : [...answerSet];
 
-  const guessStats: GuessStats[] = [];
-  for (let guessIndex = 0; guessIndex < guesses.length; guessIndex++) {
-	const guess = guesses[guessIndex];
+  const guessStats: UnrankedGuessStats[] = [];
+  for (const guess of guesses) {
     const patternAnswerDistribs: PatternAnswerDistributions = new Map();
     for (const answerDistrib of answerDistribs) {
       const pattern = getPattern(guess, answerDistrib);
@@ -158,7 +159,6 @@ export function getSortedGuessStats(
     const lengths = Array.from(patternAnswerDistribs, ([, value]) => value.length);
     guessStats.push({
       guess,
-	  rank: guessIndex + 1,
       isPossibleAnswer: answerSet.has(guess),
 	  guessPatterns: [...patternAnswerDistribs.keys()],
       avg: getAverage(lengths),
@@ -166,10 +166,10 @@ export function getSortedGuessStats(
     });
   }
 
-  return guessStats.sort(compareStats);
+  return guessStats.sort(compareStats).map((s, i) => ({...s, rank: i + 1}));
 }
 
-function compareStats(statsA: GuessStats, statsB: GuessStats) {
+function compareStats(statsA: UnrankedGuessStats, statsB: UnrankedGuessStats) {
   // Lower average should appear first
   const avgDiff = statsA.avg - statsB.avg;
   if (avgDiff !== 0) return avgDiff;
