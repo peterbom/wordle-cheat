@@ -3,11 +3,13 @@
   import { allowedAnswers } from "../build/words";
   import {
     MatchLevel,
+    getAnswersWithPattern,
     getMatchLevelAtIndex,
     type Pattern,
     getWord,
     getMatchingPatterns,
     fromStorable,
+    getLetterDistribution,
   } from "./analysis/stats";
   import {
     createGame,
@@ -27,6 +29,7 @@
   $: isUpdating = false;
 
   $: lastTurn = game.turns[game.turns.length - 1];
+  $: possibleAnswers = lastTurn.possibleAnswerStats.map((s) => s.guess);
   $: isComplete = lastTurn.possibleAnswerStats.length <= 1;
   $: guessStats = lastTurn.allGuessStats.slice(0, guessCount);
 
@@ -115,8 +118,12 @@
     <details>
       <summary>Patterns</summary>
       {#each getMatchingPatterns(lastTurn.possiblePatterns, lastTurn.partialPattern) as pattern}
-        {@const patternDistribs = lastTurn.guessStats.patternAnswerDistribs.get(pattern)}
-        {@const patternWords = patternDistribs ? patternDistribs.map(getWord) : []}
+        {@const patternDistribs = getAnswersWithPattern(
+          lastTurn.guessStats.guess,
+          possibleAnswers.map(getLetterDistribution),
+          pattern,
+        )}
+        {@const patternWords = patternDistribs.map(getWord)}
         <!-- svelte-ignore a11y-click-events-have-key-events -->
         <!-- svelte-ignore a11y-no-static-element-interactions -->
         <div class="row" on:click={() => handlePatternSelect(pattern)}>
@@ -132,8 +139,8 @@
       {/each}
     </details>
   </div>
-  <h3 title={lastTurn.possibleAnswerStats.map((s) => s.guess).join("\n")}>
-    Remaining answers: {lastTurn.possibleAnswerStats.length}
+  <h3 title={possibleAnswers.join("\n")}>
+    Remaining answers: {possibleAnswers.length}
   </h3>
   <ul class="item-list">
     <li class="table-header">

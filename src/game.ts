@@ -10,6 +10,8 @@ import {
   type PartialPattern,
   getMatchingPatterns,
   asPattern,
+  getLetterDistribution,
+  getAnswersWithPattern,
 } from "./analysis/stats";
 
 export type Turn = {
@@ -29,7 +31,7 @@ export type Game = {
 };
 
 export function createGame(guesses: GuessStats[], allowedAnswers: string[]): Game {
-  const answerSet = new Set(allowedAnswers);
+const answerSet = new Set(allowedAnswers);
   const possibleAnswerStats = guesses.filter((stats) => answerSet.has(stats.guess));
   const guessStats = guesses[0];
 
@@ -108,8 +110,9 @@ export function setNextWord(game: Game): Game {
     return game;
   }
 
-  const nextWordDistribs = lastTurn.guessStats.patternAnswerDistribs.get(lastTurn.pattern);
-  if (!nextWordDistribs || nextWordDistribs.length === 0) {
+  const answerLetterDistribs = lastTurn.possibleAnswerStats.map(s => getLetterDistribution(s.guess));
+  const nextWordDistribs = getAnswersWithPattern(lastTurn.guessStats.guess, answerLetterDistribs, lastTurn.pattern);
+  if (nextWordDistribs.length === 0) {
     return game;
   }
 
