@@ -10,6 +10,7 @@
     getMatchingPatterns,
     fromStorable,
     getLetterDistribution,
+    type GuessStats,
   } from "./analysis/stats";
   import {
     createGame,
@@ -31,7 +32,14 @@
   $: lastTurn = game.turns[game.turns.length - 1];
   $: possibleAnswers = lastTurn.possibleAnswerStats.map((s) => s.guess);
   $: isComplete = lastTurn.possibleAnswerStats.length <= 1;
-  $: guessStats = lastTurn.allGuessStats.slice(0, guessCount);
+  $: guessFilterString = "";
+  $: guessFilterPossibleOnly = false;
+  $: matchesFilter = (stats: GuessStats) => {
+    if (guessFilterString && !stats.guess.includes(guessFilterString)) return false;
+    if (guessFilterPossibleOnly && !stats.isPossibleAnswer) return false;
+    return true;
+  };
+  $: guessStats = lastTurn.allGuessStats.filter(matchesFilter).slice(0, guessCount);
 
   function updateGame(updater: (game: Game) => Game) {
     if (!game) return;
@@ -61,6 +69,8 @@
 
   function handleNextWord() {
     updateGame((game) => setNextWord(game));
+    guessFilterString = "";
+    guessFilterPossibleOnly = false;
   }
 
   function handlePatternSelect(pattern: Pattern) {
@@ -142,10 +152,22 @@
   <h3 title={possibleAnswers.join("\n")}>
     Remaining answers: {possibleAnswers.length}
   </h3>
+  <details>
+    <summary>Filter guesses</summary>
+    <label>
+      Name
+      <input type="text" bind:value={guessFilterString} />
+    </label>
+    <label>
+      Possible
+      <input type="checkbox" bind:value={guessFilterPossibleOnly} />
+    </label>
+  </details>
   <ul class="item-list">
     <li class="table-header">
       <div class="col col-1">Guess</div>
-      <div class="col col-2">Expected words remaining</div>
+      <div class="col col-1">Rank</div>
+      <div class="col col-3">Expected words remaining</div>
     </li>
     {#each guessStats as guess}
       {@const impossible = !guess.isPossibleAnswer}
@@ -157,7 +179,8 @@
         on:click={() => handleGuessClick(guess.guess)}
       >
         <div class="col col-1">{guess.guess}</div>
-        <div class="col col-2">{guess.avg.toFixed(2)}</div>
+        <div class="col col-1">{guess.rank}</div>
+        <div class="col col-3">{guess.avg.toFixed(2)}</div>
       </li>
     {/each}
   </ul>

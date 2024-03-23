@@ -52,6 +52,7 @@ export type PatternAnswerDistributions = Map<Pattern, LetterDistribution[]>;
 
 export type GuessStats = {
   guess: string;
+  rank: number;
   isPossibleAnswer: boolean;
   guessPatterns: Pattern[];
   avg: number;
@@ -91,6 +92,7 @@ export function fromStorable(storable: GuessStatsStorable): GuessStats[] {
 
     guessStats.push({
       guess,
+	  rank: guessIndex + 1,
       isPossibleAnswer: allowedAnswerSet.has(guess),
       guessPatterns,
       avg: storable.averages[guessIndex],
@@ -141,7 +143,8 @@ export function getSortedGuessStats(
   const guesses = answerDistribs.length >= 3 ? allowedGuesses : [...answerSet];
 
   const guessStats: GuessStats[] = [];
-  for (const guess of guesses) {
+  for (let guessIndex = 0; guessIndex < guesses.length; guessIndex++) {
+	const guess = guesses[guessIndex];
     const patternAnswerDistribs: PatternAnswerDistributions = new Map();
     for (const answerDistrib of answerDistribs) {
       const pattern = getPattern(guess, answerDistrib);
@@ -155,6 +158,7 @@ export function getSortedGuessStats(
     const lengths = Array.from(patternAnswerDistribs, ([, value]) => value.length);
     guessStats.push({
       guess,
+	  rank: guessIndex + 1,
       isPossibleAnswer: answerSet.has(guess),
 	  guessPatterns: [...patternAnswerDistribs.keys()],
       avg: getAverage(lengths),
